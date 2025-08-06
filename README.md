@@ -41,7 +41,6 @@ The UI is simple and designed to give you all the vital information at a glance.
 1.  **Select a Planet and Dig Site:** Choose where you want to explore from the list of available locations.
 +
 ![Select a planet](img/planet-selection.png)
-+
 ![Select a dig site](img/dig-site-selection.png)
 
 2.  **Explore the Map:** Move your character (`@`) around the map to find a good spot to scan.
@@ -53,11 +52,8 @@ The UI is simple and designed to give you all the vital information at a glance.
 4.  **Find the Treasure:** Follow the direction of the green 'X'. When you are standing on or right next to the treasure and use the roid, you will automatically dig it up and collect the Salvage.
 
 5.  **Harvest Fauna:** Defeat local creatures (`Womp Rats` (`W`) on Tatooine, `Kath Hounds` (`K`) on Alderran, `Tauntauns` (`T`) on Hoth, and `Vrakes` `V`) on Makeb) to collect Biochemicals.
-+
 ![Combat has started](img/combat-screen.png)
-+
 ![Hits and damage being traded](img/combat-hits.png)
-+
 ![Successful combat and gathering](img/combat-win.png)
 
 ## Setup and Installation
