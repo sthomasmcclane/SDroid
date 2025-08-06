@@ -1,4 +1,3 @@
-
 import curses
 import json
 import random
@@ -10,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 # --- Setup ---
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DATA_FILE = os.path.join(SCRIPT_DIR, 'gamedata.json')
-SALVAGE_FILE = os.path.join(SCRIPT_DIR, 'salvage.txt')
+RESOURCES_FILE = os.path.join(SCRIPT_DIR, 'resources.json') # Consolidated resource file
 
 # --- Data Handling ---
 def load_game_data():
@@ -24,9 +23,20 @@ def save_game_data(data):
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f, indent=2)
 
-def write_salvage(treasure_type, site_name, planet_name, quantity):
-    with open(SALVAGE_FILE, 'a') as f:
-        f.write(f"{treasure_type.capitalize()} treasure found ({quantity} salvage) at {site_name} on {planet_name}.\n")
+def load_resources():
+    """Loads resource counts from the JSON file."""
+    try:
+        with open(RESOURCES_FILE, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"Salvage": 0, "Biocomponents": 0}
+
+def update_resources(resource_type, quantity):
+    """Reads, updates, and saves the resource count for a given type."""
+    resources = load_resources()
+    resources[resource_type] = resources.get(resource_type, 0) + quantity
+    with open(RESOURCES_FILE, 'w') as f:
+        json.dump(resources, f, indent=2)
 
 def check_and_reset_sites(data):
     AEST = timezone(timedelta(hours=10))
@@ -98,7 +108,7 @@ def draw_ring(stdscr, y_on_screen, x_on_screen, radius, color_pair, indicator_ch
             stdscr.addch(y, x, '*', color_pair)
     if indicator_char and angle is not None:
         y = int(y_on_screen + radius * math.sin(angle))
-        x = int(x_on_screen + radius * 2 * math.cos(angle))
+        x = int(x_on_screen + radius * 2 * math.cos(rad))
         if 0 <= y < h - 1 and 0 <= x < w - 1:
             stdscr.addch(y, x, indicator_char, color_pair | curses.A_BOLD)
 
@@ -205,7 +215,7 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         coords.add((ex, ey))
 
     while True:
-        stdscr.clear()
+        stdscr.clear() # Fix: Clear screen at the start of the loop
         cam_y, cam_x = player_y - h // 2, player_x - w // 2
         draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
         player_screen_y, player_screen_x = h // 2, w // 2
@@ -237,7 +247,7 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 treasures.remove(nearest_treasure)
                 treasure_type = nearest_treasure['type']
                 quantity = 3 if treasure_type == 'major' else 1
-                write_salvage(treasure_type, site_name, planet_name, quantity)
+                update_resources("Salvage", quantity) # UPDATE
                 if treasure_type == 'major':
                     site_data['depleted'] = True
                     save_game_data(game_data)
@@ -285,6 +295,11 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
             player_health, result = combat_loop(stdscr, player_health, enemy_to_fight)
             if result == 'VICTORY':
                 enemies = [e for e in enemies if e['id'] != enemy_to_fight['id']]
+                update_resources("Biocomponents", 1) # UPDATE
+                msg = f"Recovered 1 Biocomponent from the defeated {enemy_char}."
+                stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
+                stdscr.refresh()
+                time.sleep(2)
             elif result == 'DEFEATED':
                 msg = "You have been defeated!"
                 stdscr.clear()
@@ -297,7 +312,7 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
 # --- Main ---
 def main(stdscr):
     curses.curs_set(0)
-    stdscr.keypad(True)
+    stdscr.keypad(True) # Fix: Enable keypad for arrow keys
     curses.start_color()
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_WHITE, -1)
