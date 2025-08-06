@@ -1,0 +1,23 @@
+{
+  "last_reset_utc": "2025-08-05T00:00:00",
+  "Tatooine": {
+    "Outlaw's Den": { "major_treasure": 1, "minor_treasures": 2, "depleted": false },
+    "Wreck of the Stardream": { "major_treasure": 1, "minor_treasures": 2, "depleted": false },
+    "Transport Ship Crash Site": { "major_treasure": 1, "minor_treasures": 2, "depleted": false }
+  },
+  "Alderaan": {
+    "House Trader's Circle": { "major_treasure": 1, "minor_treasures": 2, "depleted": false },
+    "Wardpost Landa": { "major_treasure": 1, "minor_treasures": 2, "depleted": false },
+    "Lerantha Dam": { "major_treasure": 1, "minor_treasures": 2, "depleted": false }
+  },
+  "Hoth": {
+    "Outpost Senth": { "major_treasure": 1, "minor_treasures": 2, "depleted": false },
+    "Glacial Fissure": { "major_treasure": 1, "minor_treasures": 2, "depleted": false },
+    "Highmount Ridge": { "major_treasure": 1, "minor_treasures": 2, "depleted": false }
+  },
+  "Makeb": {
+    "Cartel Mining Mesas": { "major_treasure": 1, "minor_treasures": 2, "depleted": false },
+    "Telemur Mesa": { "major_treasure": 1, "minor_treasures": 2, "depleted": false },
+    "Hutt Stronghold": { "major_treasure": 1, "minor_treasures": 2, "depleted": false }
+  }
+}
