@@ -113,7 +113,7 @@ def draw_ring(stdscr, y_on_screen, x_on_screen, radius, color_pair, indicator_ch
             stdscr.addch(y, x, '*', color_pair)
     if indicator_char and angle is not None:
         y = round(y_on_screen + radius * math.sin(angle))
-        x = round(x_on_screen + radius * 2 * math.cos(rad))
+        x = round(x_on_screen + radius * 2 * math.cos(angle))
         if 0 <= y < h - 1 and 0 <= x < w - 2:
             stdscr.addch(y, x, indicator_char, color_pair | curses.A_BOLD)
 
@@ -192,12 +192,9 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
     GREEN_RING, RED_RING, YELLOW_RING = curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)
     PLAYER_COLOR, ENEMY_PASSIVE_COLOR, ENEMY_AGGRO_COLOR = curses.color_pair(5), curses.color_pair(6), curses.color_pair(7)
 
-    # --- CHANGE: Use non-blocking input for a time-based game loop ---
     stdscr.nodelay(True)
-    
-    # --- CHANGE: Variables for time-based healing ---
     last_heal_time = time.time()
-    heal_interval = 2.5 # seconds
+    heal_interval = 2.5
 
     player_health = current_health
     coords = set()
@@ -233,14 +230,12 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         coords.add((ex, ey))
 
     while True:
-        # --- CHANGE: Time-based healing logic ---
         current_time = time.time()
         if current_time - last_heal_time >= heal_interval:
             if player_health < 100:
                 player_health += 1
             last_heal_time = current_time
 
-        # --- CHANGE: Handle non-blocking input ---
         try:
             key = stdscr.getkey()
         except curses.error:
@@ -290,7 +285,8 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                         stdscr.refresh()
                         time.sleep(1)
                 elif dist < 15:
-                    angle = math.atan2(nearest_treasure['y'] - player_y, (nearest_treasure['x'] - player_x) / 2)
+                    # --- FIX: Calculate angle with true coordinates, not distorted ones ---
+                    angle = math.atan2(nearest_treasure['y'] - player_y, nearest_treasure['x'] - player_x)
                     draw_ring(stdscr, player_screen_y, player_screen_x, 1, GREEN_RING, 'X', angle)
                     stdscr.refresh()
                     time.sleep(0.75)
@@ -302,7 +298,6 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
             if 0 <= new_y < map_h and 0 <= new_x < map_w and game_map[new_y][new_x] == '.':
                 player_y, player_x = new_y, new_x
 
-        # Screen drawing and enemy logic runs every loop, independent of input
         stdscr.clear()
         cam_y, cam_x = player_y - h // 2, player_x - w // 2
         draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
@@ -331,9 +326,9 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 enemy['color'] = ENEMY_PASSIVE_COLOR
         
         if enemy_to_fight:
-            stdscr.nodelay(False) # Switch to blocking mode for combat
+            stdscr.nodelay(False)
             player_health, result = combat_loop(stdscr, player_health, enemy_to_fight)
-            stdscr.nodelay(True)  # Switch back to non-blocking mode
+            stdscr.nodelay(True)
             
             if result == 'VICTORY':
                 enemies = [e for e in enemies if e['id'] != enemy_to_fight['id']]
@@ -354,9 +349,9 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 stdscr.nodelay(False)
                 return 0
         
-        time.sleep(0.01) # Small sleep to prevent 100% CPU usage
+        time.sleep(0.01)
 
-    stdscr.nodelay(False) # Ensure we return to blocking mode
+    stdscr.nodelay(False)
     return player_health
 
 # --- Main ---
@@ -383,8 +378,6 @@ def main(stdscr):
 
     player_health = 100
     while True:
-        # Menus always expect blocking input, which nodelay(False) provides.
-        # The wrapper ensures this is the default state.
         chosen_planet = choose_planet(stdscr, game_data)
         if not chosen_planet: break
         chosen_site = choose_dig_site(stdscr, game_data, chosen_planet)
