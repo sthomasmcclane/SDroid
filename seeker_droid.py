@@ -192,7 +192,12 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
     GREEN_RING, RED_RING, YELLOW_RING = curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)
     PLAYER_COLOR, ENEMY_PASSIVE_COLOR, ENEMY_AGGRO_COLOR = curses.color_pair(5), curses.color_pair(6), curses.color_pair(7)
 
-    curses.halfdelay(25)
+    # --- CHANGE: Use non-blocking input for a time-based game loop ---
+    stdscr.nodelay(True)
+    
+    # --- CHANGE: Variables for time-based healing ---
+    last_heal_time = time.time()
+    heal_interval = 2.5 # seconds
 
     player_health = current_health
     coords = set()
@@ -228,6 +233,76 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         coords.add((ex, ey))
 
     while True:
+        # --- CHANGE: Time-based healing logic ---
+        current_time = time.time()
+        if current_time - last_heal_time >= heal_interval:
+            if player_health < 100:
+                player_health += 1
+            last_heal_time = current_time
+
+        # --- CHANGE: Handle non-blocking input ---
+        try:
+            key = stdscr.getkey()
+        except curses.error:
+            key = None
+
+        if key is not None:
+            new_y, new_x = player_y, player_x
+            if key in ('e', 'KEY_UP'): new_y -= 1
+            elif key in ('d', 'KEY_DOWN'): new_y += 1
+            elif key in ('s', 'KEY_LEFT'): new_x -= 1
+            elif key in ('f', 'KEY_RIGHT'): new_x += 1
+            elif key == 'q': break
+            elif key == ' ':
+                if not treasures: continue
+                dists = [(math.dist((player_x, player_y), (t['x'], t['y'])), t) for t in treasures]
+                dist, nearest_treasure = min(dists, key=lambda item: item[0])
+                
+                radius = 2
+                
+                draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
+                stdscr.addstr(player_screen_y, player_screen_x, '@', PLAYER_COLOR)
+                for i in range(0, 361, 15):
+                    draw_ring(stdscr, player_screen_y, player_screen_x, radius, YELLOW_RING, start_angle=0, end_angle=i)
+                    stdscr.refresh()
+                    time.sleep(0.05)
+                
+                draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
+                stdscr.addstr(player_screen_y, player_screen_x, '@', PLAYER_COLOR)
+
+                if dist < 3:
+                    treasures.remove(nearest_treasure)
+                    treasure_type = nearest_treasure['type']
+                    quantity = 3 if treasure_type == 'major' else 1
+                    update_resources("Salvage", quantity)
+                    if treasure_type == 'major':
+                        site_data['depleted'] = True
+                        save_game_data(game_data)
+                        msg = f"Major treasure found! ({quantity} salvage)"
+                        stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
+                        stdscr.refresh()
+                        time.sleep(2)
+                        stdscr.nodelay(False)
+                        return player_health
+                    else:
+                        msg = f"Minor treasure found! ({quantity} salvage)"
+                        stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
+                        stdscr.refresh()
+                        time.sleep(1)
+                elif dist < 15:
+                    angle = math.atan2(nearest_treasure['y'] - player_y, (nearest_treasure['x'] - player_x) / 2)
+                    draw_ring(stdscr, player_screen_y, player_screen_x, 1, GREEN_RING, 'X', angle)
+                    stdscr.refresh()
+                    time.sleep(0.75)
+                else:
+                    draw_ring(stdscr, player_screen_y, player_screen_x, 2, RED_RING)
+                    stdscr.refresh()
+                    time.sleep(0.75)
+
+            if 0 <= new_y < map_h and 0 <= new_x < map_w and game_map[new_y][new_x] == '.':
+                player_y, player_x = new_y, new_x
+
+        # Screen drawing and enemy logic runs every loop, independent of input
         stdscr.clear()
         cam_y, cam_x = player_y - h // 2, player_x - w // 2
         draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
@@ -238,73 +313,6 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         draw_resources_display(stdscr)
         
         stdscr.refresh()
-
-        try:
-            key = stdscr.getkey()
-        except curses.error:
-            key = None
-
-        if player_health < 100:
-            player_health += 1
-
-        if key is None:
-            continue
-
-        new_y, new_x = player_y, player_x
-        if key in ('e', 'KEY_UP'): new_y -= 1
-        elif key in ('d', 'KEY_DOWN'): new_y += 1
-        elif key in ('s', 'KEY_LEFT'): new_x -= 1
-        elif key in ('f', 'KEY_RIGHT'): new_x += 1
-        elif key == 'q': break
-        elif key == ' ':
-            if not treasures: continue
-            dists = [(math.dist((player_x, player_y), (t['x'], t['y'])), t) for t in treasures]
-            dist, nearest_treasure = min(dists, key=lambda item: item[0])
-            
-            radius = 2
-            
-            draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
-            stdscr.addstr(player_screen_y, player_screen_x, '@', PLAYER_COLOR)
-            for i in range(0, 361, 15):
-                draw_ring(stdscr, player_screen_y, player_screen_x, radius, YELLOW_RING, start_angle=0, end_angle=i)
-                stdscr.refresh()
-                time.sleep(0.05)
-            
-            draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
-            stdscr.addstr(player_screen_y, player_screen_x, '@', PLAYER_COLOR)
-
-            if dist < 3:
-                treasures.remove(nearest_treasure)
-                treasure_type = nearest_treasure['type']
-                quantity = 3 if treasure_type == 'major' else 1
-                update_resources("Salvage", quantity)
-                if treasure_type == 'major':
-                    site_data['depleted'] = True
-                    save_game_data(game_data)
-                    msg = f"Major treasure found! ({quantity} salvage)"
-                    stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
-                    stdscr.refresh()
-                    time.sleep(2)
-                    curses.cbreak()
-                    return player_health
-                else:
-                    msg = f"Minor treasure found! ({quantity} salvage)"
-                    stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
-                    stdscr.refresh()
-                    time.sleep(1)
-            elif dist < 15:
-                angle = math.atan2(nearest_treasure['y'] - player_y, (nearest_treasure['x'] - player_x) / 2)
-                draw_ring(stdscr, player_screen_y, player_screen_x, 1, GREEN_RING, 'X', angle)
-                stdscr.refresh()
-                time.sleep(0.75)
-            else:
-                draw_ring(stdscr, player_screen_y, player_screen_x, 2, RED_RING)
-                stdscr.refresh()
-                time.sleep(0.75)
-            continue
-
-        if 0 <= new_y < map_h and 0 <= new_x < map_w and game_map[new_y][new_x] == '.':
-            player_y, player_x = new_y, new_x
 
         enemy_to_fight = None
         for enemy in enemies:
@@ -323,9 +331,9 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 enemy['color'] = ENEMY_PASSIVE_COLOR
         
         if enemy_to_fight:
-            curses.cbreak()
+            stdscr.nodelay(False) # Switch to blocking mode for combat
             player_health, result = combat_loop(stdscr, player_health, enemy_to_fight)
-            curses.halfdelay(25)
+            stdscr.nodelay(True)  # Switch back to non-blocking mode
             
             if result == 'VICTORY':
                 enemies = [e for e in enemies if e['id'] != enemy_to_fight['id']]
@@ -343,10 +351,12 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 stdscr.addstr(h // 2, (w - len(msg)) // 2, msg)
                 stdscr.refresh()
                 time.sleep(2)
-                curses.cbreak()
+                stdscr.nodelay(False)
                 return 0
-    
-    curses.cbreak()
+        
+        time.sleep(0.01) # Small sleep to prevent 100% CPU usage
+
+    stdscr.nodelay(False) # Ensure we return to blocking mode
     return player_health
 
 # --- Main ---
@@ -373,11 +383,12 @@ def main(stdscr):
 
     player_health = 100
     while True:
+        # Menus always expect blocking input, which nodelay(False) provides.
+        # The wrapper ensures this is the default state.
         chosen_planet = choose_planet(stdscr, game_data)
         if not chosen_planet: break
         chosen_site = choose_dig_site(stdscr, game_data, chosen_planet)
         if chosen_site:
-            # --- CHANGE: Increased max_tiles for more open maps ---
             game_map = create_irregular_map(150, 50, 16000)
             player_health = game_loop(stdscr, game_map, game_data[chosen_planet][chosen_site], chosen_planet, chosen_site, player_health)
             if player_health <= 0:
