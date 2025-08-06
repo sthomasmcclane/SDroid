@@ -98,18 +98,25 @@ def draw_health_bar(stdscr, y, x, label, health, max_health, bar_width):
     for i in range(bar_width - health_chunks): stdscr.addch(' ')
     stdscr.addstr(f"] {health}/{max_health}")
 
+def draw_resources_display(stdscr):
+    resources = load_resources()
+    salvage = resources.get("Salvage", 0)
+    biocomponents = resources.get("Biocomponents", 0)
+    display_str = f"Salvage: {salvage} | Biocomponents: {biocomponents}"
+    stdscr.addstr(1, 1, display_str)
+
 def draw_ring(stdscr, y_on_screen, x_on_screen, radius, color_pair, indicator_char=None, angle=None, start_angle=0, end_angle=360):
     h, w = stdscr.getmaxyx()
     for i in range(start_angle, end_angle):
         rad = math.radians(i)
         y = int(y_on_screen + radius * math.sin(rad))
         x = int(x_on_screen + radius * 2 * math.cos(rad))
-        if 0 <= y < h - 1 and 0 <= x < w - 1:
+        if 0 <= y < h - 1 and 0 <= x < w - 2:
             stdscr.addch(y, x, '*', color_pair)
     if indicator_char and angle is not None:
         y = int(y_on_screen + radius * math.sin(angle))
         x = int(x_on_screen + radius * 2 * math.cos(rad))
-        if 0 <= y < h - 1 and 0 <= x < w - 1:
+        if 0 <= y < h - 1 and 0 <= x < w - 2:
             stdscr.addch(y, x, indicator_char, color_pair | curses.A_BOLD)
 
 # --- Menus ---
@@ -129,13 +136,13 @@ def draw_menu(stdscr, title, options):
             return None
 
 def choose_planet(stdscr, game_data):
-    curses.cbreak()
+    # FIX: Do NOT manually set cbreak here. The wrapper handles it.
     planets = [p for p in game_data.keys() if p != "last_reset_utc"]
     choice_index = draw_menu(stdscr, "Choose a Planet (q to quit)", planets)
     return planets[choice_index] if choice_index is not None else None
 
 def choose_dig_site(stdscr, game_data, planet):
-    curses.cbreak()
+    # FIX: Do NOT manually set cbreak here.
     sites = game_data.get(planet, {})
     available_sites = [name for name, data in sites.items() if not data.get('depleted', False)]
     if not available_sites:
@@ -189,7 +196,6 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
     GREEN_RING, RED_RING, YELLOW_RING = curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)
     PLAYER_COLOR, ENEMY_PASSIVE_COLOR, ENEMY_AGGRO_COLOR = curses.color_pair(5), curses.color_pair(6), curses.color_pair(7)
 
-    # --- CHANGE: Set HP regen to 2.5 seconds (25 tenths) ---
     curses.halfdelay(25)
 
     player_health = current_health
@@ -210,7 +216,6 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         treasures.append({'x': tx, 'y': ty, 'type': 'minor'})
         coords.add((tx, ty))
 
-    # --- CHANGE: Updated enemy character mapping and added full names ---
     enemy_char_map = {"Tatooine": "W", "Alderaan": "K", "Hoth": "T", "Makeb": "V"}
     fauna_name_map = {
         "Tatooine": "Womp Rat",
@@ -232,7 +237,10 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
         player_screen_y, player_screen_x = h // 2, w // 2
         stdscr.addstr(player_screen_y, player_screen_x, '@', PLAYER_COLOR)
+        
         draw_health_bar(stdscr, 0, 1, "Health", player_health, 100, w // 4)
+        draw_resources_display(stdscr)
+        
         stdscr.refresh()
 
         try:
@@ -257,7 +265,6 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
             dists = [(math.dist((player_x, player_y), (t['x'], t['y'])), t) for t in treasures]
             dist, nearest_treasure = min(dists, key=lambda item: item[0])
             
-            # --- FIX: Set a consistent radius for the initial scan animation ---
             radius = 2
             
             draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
@@ -266,6 +273,10 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 draw_ring(stdscr, player_screen_y, player_screen_x, radius, YELLOW_RING, start_angle=0, end_angle=i)
                 stdscr.refresh()
                 time.sleep(0.05)
+            
+            draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
+            stdscr.addstr(player_screen_y, player_screen_x, '@', PLAYER_COLOR)
+
             if dist < 3:
                 treasures.remove(nearest_treasure)
                 treasure_type = nearest_treasure['type']
@@ -278,6 +289,7 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                     stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
                     stdscr.refresh()
                     time.sleep(2)
+                    curses.cbreak() # FIX: Restore cbreak before exiting
                     return player_health
                 else:
                     msg = f"Minor treasure found! ({quantity} salvage)"
@@ -317,14 +329,12 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         if enemy_to_fight:
             curses.cbreak()
             player_health, result = combat_loop(stdscr, player_health, enemy_to_fight)
-            # --- CHANGE: Restore 2.5 second timeout after combat ---
             curses.halfdelay(25)
             
             if result == 'VICTORY':
                 enemies = [e for e in enemies if e['id'] != enemy_to_fight['id']]
                 update_resources("Biocomponents", 1)
                 
-                # --- CHANGE: Use full fauna name in victory message ---
                 fauna_name = fauna_name_map.get(planet_name, "creature")
                 msg = f"Harvested 1 Biocomponent from the defeated {fauna_name}."
                 
@@ -337,9 +347,10 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 stdscr.addstr(h // 2, (w - len(msg)) // 2, msg)
                 stdscr.refresh()
                 time.sleep(2)
+                curses.cbreak() # FIX: Restore cbreak before exiting
                 return 0
     
-    curses.cbreak()
+    curses.cbreak() # FIX: Restore cbreak before exiting
     return player_health
 
 # --- Main ---
@@ -366,12 +377,14 @@ def main(stdscr):
 
     player_health = 100
     while True:
+        # Menus expect cbreak mode, so we ensure it's set before we call them.
+        curses.cbreak()
         chosen_planet = choose_planet(stdscr, game_data)
         if not chosen_planet: break
         chosen_site = choose_dig_site(stdscr, game_data, chosen_planet)
         if chosen_site:
-            # --- CHANGE: Generate less cluttered maps ---
-            game_map = create_irregular_map(150, 50, 3500)
+            # Create a large, open map
+            game_map = create_irregular_map(150, 50, 8000)
             player_health = game_loop(stdscr, game_map, game_data[chosen_planet][chosen_site], chosen_planet, chosen_site, player_health)
             if player_health <= 0:
                 player_health = 100
