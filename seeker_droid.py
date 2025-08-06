@@ -28,7 +28,8 @@ def load_resources():
         with open(RESOURCES_FILE, 'r') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"Salvage": 0, "Biocomponents": 0}
+        # --- CHANGE: Updated default resource name ---
+        return {"Salvage": 0, "Biochemicals": 0}
 
 def update_resources(resource_type, quantity):
     resources = load_resources()
@@ -99,8 +100,9 @@ def draw_health_bar(stdscr, y, x, label, health, max_health, bar_width):
 def draw_resources_display(stdscr):
     resources = load_resources()
     salvage = resources.get("Salvage", 0)
-    biocomponents = resources.get("Biocomponents", 0)
-    display_str = f"Salvage: {salvage} | Biocomponents: {biocomponents}"
+    # --- CHANGE: Updated resource name ---
+    biochemicals = resources.get("Biochemicals", 0)
+    display_str = f"Salvage: {salvage} | Biochemicals: {biochemicals}"
     stdscr.addstr(1, 1, display_str)
 
 def draw_ring(stdscr, y_on_screen, x_on_screen, radius, color_pair, indicator_char=None, angle=None, start_angle=0, end_angle=360):
@@ -113,7 +115,7 @@ def draw_ring(stdscr, y_on_screen, x_on_screen, radius, color_pair, indicator_ch
             stdscr.addch(y, x, '*', color_pair)
     if indicator_char and angle is not None:
         y = round(y_on_screen + radius * math.sin(angle))
-        x = round(x_on_screen + radius * 2 * math.cos(angle))
+        x = round(x_on_screen + radius * 2 * math.cos(rad))
         if 0 <= y < h - 1 and 0 <= x < w - 2:
             stdscr.addch(y, x, indicator_char, color_pair | curses.A_BOLD)
 
@@ -285,7 +287,6 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                         stdscr.refresh()
                         time.sleep(1)
                 elif dist < 15:
-                    # --- FIX: Calculate angle with true coordinates, not distorted ones ---
                     angle = math.atan2(nearest_treasure['y'] - player_y, nearest_treasure['x'] - player_x)
                     draw_ring(stdscr, player_screen_y, player_screen_x, 1, GREEN_RING, 'X', angle)
                     stdscr.refresh()
@@ -332,10 +333,12 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
             
             if result == 'VICTORY':
                 enemies = [e for e in enemies if e['id'] != enemy_to_fight['id']]
-                update_resources("Biocomponents", 1)
+                # --- CHANGE: Updated resource name ---
+                update_resources("Biochemicals", 1)
                 
                 fauna_name = fauna_name_map.get(planet_name, "creature")
-                msg = f"Harvested 1 Biocomponent from the defeated {fauna_name}."
+                # --- CHANGE: Updated resource name in message ---
+                msg = f"Harvested 1 unit of Biochemicals from the defeated {fauna_name}."
                 
                 stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
                 stdscr.refresh()
