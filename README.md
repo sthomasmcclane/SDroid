@@ -8,6 +8,8 @@ A lightweight terminal-based, resource-gathering game inspired by the simple, sa
 
 The game is designed to capture the relaxing, low-stress gameplay loop of gathering resources without the need to load a full-scale MMO.
 
+![Overview of the UI](img/map-makeb.png)
+
 ## Features
 
 *   **Procedurally Generated Maps:** Every dig site is a unique, field with many obstacles, providing a new experience every time.
@@ -37,12 +39,26 @@ The UI is simple and designed to give you all the vital information at a glance.
 ### The Gameplay Loop
 
 1.  **Select a Planet and Dig Site:** Choose where you want to explore from the list of available locations.
++
+![Select a planet](img/planet-selection.png)
++
+![Select a dig site](img/dig-site-selection.png)
+
 2.  **Explore the Map:** Move your character (`@`) around the map to find a good spot to scan.
+
 3.  **Scan for Treasure:** Press the `spacebar` to activate the Seeker Droid(™).
     *   A **large red ring** indicates that the nearest treasure is far away. Move to a new area and try again.
     *   A **small green ring with an 'X'** indicates that a treasure is nearby. The 'X' points in the precise direction of the treasure.
+
 4.  **Find the Treasure:** Follow the direction of the green 'X'. When you are standing on or right next to the treasure and use the roid, you will automatically dig it up and collect the Salvage.
+
 5.  **Harvest Fauna:** Defeat local creatures (`Womp Rats` (`W`) on Tatooine, `Kath Hounds` (`K`) on Alderran, `Tauntauns` (`T`) on Hoth, and `Vrakes` `V`) on Makeb) to collect Biochemicals.
++
+![Combat has started](img/combat-screen.png)
++
+![Hits and damage being traded](img/combat-hits.png)
++
+![Successful combat and gathering](img/combat-win.png)
 
 ## Setup and Installation
 
