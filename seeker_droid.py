@@ -373,13 +373,12 @@ def main(stdscr):
 
     player_health = 100
     while True:
-        # FIX: Do not call cbreak() here. The wrapper sets the default mode.
-        # The game_loop is responsible for restoring cbreak mode before it returns.
         chosen_planet = choose_planet(stdscr, game_data)
         if not chosen_planet: break
         chosen_site = choose_dig_site(stdscr, game_data, chosen_planet)
         if chosen_site:
-            game_map = create_irregular_map(150, 50, 8000)
+            # --- CHANGE: Increased max_tiles for more open maps ---
+            game_map = create_irregular_map(150, 50, 16000)
             player_health = game_loop(stdscr, game_map, game_data[chosen_planet][chosen_site], chosen_planet, chosen_site, player_health)
             if player_health <= 0:
                 player_health = 100
