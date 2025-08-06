@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 # --- Setup ---
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DATA_FILE = os.path.join(SCRIPT_DIR, 'gamedata.json')
-RESOURCES_FILE = os.path.join(SCRIPT_DIR, 'resources.json') # Consolidated resource file
+RESOURCES_FILE = os.path.join(SCRIPT_DIR, 'resources.json')
 
 # --- Data Handling ---
 def load_game_data():
@@ -24,7 +24,6 @@ def save_game_data(data):
         json.dump(data, f, indent=2)
 
 def load_resources():
-    """Loads resource counts from the JSON file."""
     try:
         with open(RESOURCES_FILE, 'r') as f:
             return json.load(f)
@@ -32,7 +31,6 @@ def load_resources():
         return {"Salvage": 0, "Biocomponents": 0}
 
 def update_resources(resource_type, quantity):
-    """Reads, updates, and saves the resource count for a given type."""
     resources = load_resources()
     resources[resource_type] = resources.get(resource_type, 0) + quantity
     with open(RESOURCES_FILE, 'w') as f:
@@ -109,13 +107,13 @@ def draw_ring(stdscr, y_on_screen, x_on_screen, radius, color_pair, indicator_ch
     h, w = stdscr.getmaxyx()
     for i in range(start_angle, end_angle):
         rad = math.radians(i)
-        y = int(y_on_screen + radius * math.sin(rad))
-        x = int(x_on_screen + radius * 2 * math.cos(rad))
+        y = round(y_on_screen + radius * math.sin(rad))
+        x = round(x_on_screen + radius * 2 * math.cos(rad))
         if 0 <= y < h - 1 and 0 <= x < w - 2:
             stdscr.addch(y, x, '*', color_pair)
     if indicator_char and angle is not None:
-        y = int(y_on_screen + radius * math.sin(angle))
-        x = int(x_on_screen + radius * 2 * math.cos(rad))
+        y = round(y_on_screen + radius * math.sin(angle))
+        x = round(x_on_screen + radius * 2 * math.cos(rad))
         if 0 <= y < h - 1 and 0 <= x < w - 2:
             stdscr.addch(y, x, indicator_char, color_pair | curses.A_BOLD)
 
@@ -136,13 +134,11 @@ def draw_menu(stdscr, title, options):
             return None
 
 def choose_planet(stdscr, game_data):
-    # FIX: Do NOT manually set cbreak here. The wrapper handles it.
     planets = [p for p in game_data.keys() if p != "last_reset_utc"]
     choice_index = draw_menu(stdscr, "Choose a Planet (q to quit)", planets)
     return planets[choice_index] if choice_index is not None else None
 
 def choose_dig_site(stdscr, game_data, planet):
-    # FIX: Do NOT manually set cbreak here.
     sites = game_data.get(planet, {})
     available_sites = [name for name, data in sites.items() if not data.get('depleted', False)]
     if not available_sites:
@@ -289,7 +285,7 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                     stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
                     stdscr.refresh()
                     time.sleep(2)
-                    curses.cbreak() # FIX: Restore cbreak before exiting
+                    curses.cbreak()
                     return player_health
                 else:
                     msg = f"Minor treasure found! ({quantity} salvage)"
@@ -347,10 +343,10 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 stdscr.addstr(h // 2, (w - len(msg)) // 2, msg)
                 stdscr.refresh()
                 time.sleep(2)
-                curses.cbreak() # FIX: Restore cbreak before exiting
+                curses.cbreak()
                 return 0
     
-    curses.cbreak() # FIX: Restore cbreak before exiting
+    curses.cbreak()
     return player_health
 
 # --- Main ---
@@ -377,13 +373,12 @@ def main(stdscr):
 
     player_health = 100
     while True:
-        # Menus expect cbreak mode, so we ensure it's set before we call them.
-        curses.cbreak()
+        # FIX: Do not call cbreak() here. The wrapper sets the default mode.
+        # The game_loop is responsible for restoring cbreak mode before it returns.
         chosen_planet = choose_planet(stdscr, game_data)
         if not chosen_planet: break
         chosen_site = choose_dig_site(stdscr, game_data, chosen_planet)
         if chosen_site:
-            # Create a large, open map
             game_map = create_irregular_map(150, 50, 8000)
             player_health = game_loop(stdscr, game_map, game_data[chosen_planet][chosen_site], chosen_planet, chosen_site, player_health)
             if player_health <= 0:
