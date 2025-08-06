@@ -122,20 +122,20 @@ def draw_menu(stdscr, title, options):
         stdscr.addstr(4 + i, (w - len(option)) // 2, f"{i + 1}. {option}")
     stdscr.refresh()
     while True:
-        try:
-            key = stdscr.getkey()
-            if '1' <= key <= str(len(options)):
-                return int(key) - 1
-            elif key == 'q':
-                return None
-        except: pass
+        key = stdscr.getkey()
+        if '1' <= key <= str(len(options)):
+            return int(key) - 1
+        elif key == 'q':
+            return None
 
 def choose_planet(stdscr, game_data):
+    curses.cbreak()
     planets = [p for p in game_data.keys() if p != "last_reset_utc"]
     choice_index = draw_menu(stdscr, "Choose a Planet (q to quit)", planets)
     return planets[choice_index] if choice_index is not None else None
 
 def choose_dig_site(stdscr, game_data, planet):
+    curses.cbreak()
     sites = game_data.get(planet, {})
     available_sites = [name for name, data in sites.items() if not data.get('depleted', False)]
     if not available_sites:
@@ -189,6 +189,9 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
     GREEN_RING, RED_RING, YELLOW_RING = curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)
     PLAYER_COLOR, ENEMY_PASSIVE_COLOR, ENEMY_AGGRO_COLOR = curses.color_pair(5), curses.color_pair(6), curses.color_pair(7)
 
+    # --- CHANGE: Set HP regen to 2.5 seconds (25 tenths) ---
+    curses.halfdelay(25)
+
     player_health = current_health
     coords = set()
     player_x, player_y = place_on_map(game_map, coords)
@@ -207,7 +210,16 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         treasures.append({'x': tx, 'y': ty, 'type': 'minor'})
         coords.add((tx, ty))
 
-    enemy_char = {"Tatooine": "W", "Alderaan": "K", "Hoth": "F", "Makeb": "B"}.get(planet_name, 'E')
+    # --- CHANGE: Updated enemy character mapping and added full names ---
+    enemy_char_map = {"Tatooine": "W", "Alderaan": "K", "Hoth": "T", "Makeb": "V"}
+    fauna_name_map = {
+        "Tatooine": "Womp Rat",
+        "Alderaan": "Kath Hound",
+        "Hoth": "Tauntaun",
+        "Makeb": "Vrake"
+    }
+    enemy_char = enemy_char_map.get(planet_name, 'E')
+
     enemies = []
     for i in range(10):
         ex, ey = place_on_map(game_map, coords)
@@ -215,7 +227,7 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         coords.add((ex, ey))
 
     while True:
-        stdscr.clear() # Fix: Clear screen at the start of the loop
+        stdscr.clear()
         cam_y, cam_x = player_y - h // 2, player_x - w // 2
         draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
         player_screen_y, player_screen_x = h // 2, w // 2
@@ -223,8 +235,16 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
         draw_health_bar(stdscr, 0, 1, "Health", player_health, 100, w // 4)
         stdscr.refresh()
 
-        try: key = stdscr.getkey()
-        except (KeyboardInterrupt, curses.error): break
+        try:
+            key = stdscr.getkey()
+        except curses.error:
+            key = None
+
+        if player_health < 100:
+            player_health += 1
+
+        if key is None:
+            continue
 
         new_y, new_x = player_y, player_x
         if key in ('e', 'KEY_UP'): new_y -= 1
@@ -236,7 +256,10 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
             if not treasures: continue
             dists = [(math.dist((player_x, player_y), (t['x'], t['y'])), t) for t in treasures]
             dist, nearest_treasure = min(dists, key=lambda item: item[0])
-            radius = 1 if dist < 15 else 2
+            
+            # --- FIX: Set a consistent radius for the initial scan animation ---
+            radius = 2
+            
             draw_map_viewport(stdscr, game_map, cam_y, cam_x, enemies)
             stdscr.addstr(player_screen_y, player_screen_x, '@', PLAYER_COLOR)
             for i in range(0, 361, 15):
@@ -247,7 +270,7 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 treasures.remove(nearest_treasure)
                 treasure_type = nearest_treasure['type']
                 quantity = 3 if treasure_type == 'major' else 1
-                update_resources("Salvage", quantity) # UPDATE
+                update_resources("Salvage", quantity)
                 if treasure_type == 'major':
                     site_data['depleted'] = True
                     save_game_data(game_data)
@@ -292,11 +315,19 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 enemy['color'] = ENEMY_PASSIVE_COLOR
         
         if enemy_to_fight:
+            curses.cbreak()
             player_health, result = combat_loop(stdscr, player_health, enemy_to_fight)
+            # --- CHANGE: Restore 2.5 second timeout after combat ---
+            curses.halfdelay(25)
+            
             if result == 'VICTORY':
                 enemies = [e for e in enemies if e['id'] != enemy_to_fight['id']]
-                update_resources("Biocomponents", 1) # UPDATE
-                msg = f"Recovered 1 Biocomponent from the defeated {enemy_char}."
+                update_resources("Biocomponents", 1)
+                
+                # --- CHANGE: Use full fauna name in victory message ---
+                fauna_name = fauna_name_map.get(planet_name, "creature")
+                msg = f"Harvested 1 Biocomponent from the defeated {fauna_name}."
+                
                 stdscr.addstr(h // 2 + 5, (w - len(msg)) // 2, msg)
                 stdscr.refresh()
                 time.sleep(2)
@@ -307,12 +338,14 @@ def game_loop(stdscr, game_map, site_data, planet_name, site_name, current_healt
                 stdscr.refresh()
                 time.sleep(2)
                 return 0
+    
+    curses.cbreak()
     return player_health
 
 # --- Main ---
 def main(stdscr):
     curses.curs_set(0)
-    stdscr.keypad(True) # Fix: Enable keypad for arrow keys
+    stdscr.keypad(True)
     curses.start_color()
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_WHITE, -1)
@@ -337,7 +370,8 @@ def main(stdscr):
         if not chosen_planet: break
         chosen_site = choose_dig_site(stdscr, game_data, chosen_planet)
         if chosen_site:
-            game_map = create_irregular_map(150, 50, 5000)
+            # --- CHANGE: Generate less cluttered maps ---
+            game_map = create_irregular_map(150, 50, 3500)
             player_health = game_loop(stdscr, game_map, game_data[chosen_planet][chosen_site], chosen_planet, chosen_site, player_health)
             if player_health <= 0:
                 player_health = 100
