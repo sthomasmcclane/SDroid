@@ -99,3 +99,10 @@ The expected directory structure will look like this after running the game for 
 ├── gamedata.json
 └── resources.json
 ```
+
+## Notes and ToDos
+
+Some things that are currently less than perfect and that may be fixed one day (or sooner if someone else cares to contribute):
+
+* The Player stats (Health and resource counts) do not really stand out against the map.
+* Redrawing the map is flicker and feels janky. It works but it doesn't look too good.
