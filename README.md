@@ -50,7 +50,11 @@ The UI is simple and designed to give you all the vital information at a glance.
 
 4.  **Find the Treasure:** Follow the direction of the green 'X'. When you are standing on or right next to the treasure and use the roid, you will automatically dig it up and collect the Salvage.
 
-5.  **Harvest Fauna:** Defeat local creatures (`Womp Rats` (`W`) on Tatooine, `Kath Hounds` (`K`) on Alderran, `Tauntauns` (`T`) on Hoth, and `Vrakes` `V`) on Makeb) to collect Biochemicals.
+5.  **Harvest Fauna:** Defeat local creatures to collect Biochemicals. **Creatures have an agro range and will pursue for a short distance**.
+	* `Womp Rats` (`W`) on Tatooine
+	* `Kath Hounds` (`K`) on Alderran,
+	* `Tauntauns` (`T`) on Hoth
+	* `Vrakes` (`V`) on Makeb) 
 ![Combat has started](img/combat-screen.png)
 ![Hits and damage being traded](img/combat-hits.png)
 ![Successful combat and gathering](img/combat-win.png)
