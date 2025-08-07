@@ -62,7 +62,7 @@ The UI is simple and designed to give you all the vital information at a glance.
 	* `Womp Rats` (`W`) on Tatooine
 	* `Kath Hounds` (`K`) on Alderran,
 	* `Tauntauns` (`T`) on Hoth
-	* `Vrakes` (`V`) on Makeb) 
+	* `Vrakes` (`V`) on Makeb 
 ![Combat has started](img/combat-screen.png)
 ![Hits and damage being traded](img/combat-hits.png)
 ![Successful combat and gathering](img/combat-win.png)
