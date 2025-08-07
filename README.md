@@ -45,15 +45,12 @@ The UI is simple and designed to give you all the vital information at a glance.
 2.  **Explore the Map:** Move your character (`@`) around the map to find a good spot to scan.
 
 3.  **Scan for Treasure:** Press the `spacebar` to activate the Seeker Droid(™).
-
 ![Scanning animation](img/scanning.png)
 
-    *   A **large red ring** indicates that the nearest treasure is far away. Move to a new area and try again.
-    
+*   A **large red ring** indicates that the nearest treasure is far away. Move to a new area and try again.    
 ![Scan failure](img/scan-failed.png)
 
-    *   A **small green ring with an 'X'** indicates that a treasure is nearby. The 'X' points in the precise direction of the treasure.
-    
+*   A **small green ring with an 'X'** indicates that a treasure is nearby. The 'X' points in the precise direction of the treasure.    
 ![Scan success](img/scan-success.png)
 
 4.  **Find the Treasure:** Follow the direction of the green 'X'. When you are standing on or right next to the treasure and use the roid, you will automatically dig it up and collect the Salvage.
