@@ -51,7 +51,7 @@ The UI is simple and designed to give you all the vital information at a glance.
 
 ![Scanning animation](img/scanning.png)
 
-*   A **large red ring** indicates that the nearest treasure is far away. Move to a new area and try again.   
+*   A **large red ring** indicates there is no treasure nearby. Move to a new area and try again.   
  
 ![Scan failure](img/scan-failed.png)
 
