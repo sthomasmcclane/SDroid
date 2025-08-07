@@ -61,7 +61,7 @@ The UI is simple and designed to give you all the vital information at a glance.
 
 4.  **Find the Treasure:** Follow the direction of the green 'X'. When you are standing on or right next to the treasure and use the droid, you will automatically dig it up and collect the Salvage.
 
-5.  **Harvest Fauna:** Defeat local creatures to collect Biochemicals. **Creatures have an agro range and will pursue for a short distance**.
+5.  **Harvest Fauna:** Defeat local creatures to collect Biochemicals. **Creatures have an aggro range and will pursue for a short distance**.
 	* `Womp Rats` (`W`) on Tatooine
 	* `Kath Hounds` (`K`) on Alderran,
 	* `Tauntauns` (`T`) on Hoth
@@ -108,4 +108,5 @@ Some things that are currently less than perfect and that may be fixed one day (
 
 * The Player stats (Health and resource counts) do not really stand out against the map.
 * Redrawing the map is flickery and feels janky. It works but it doesn't look too good.
-* ESDF vs WASD. I prefer ESDF (so that's how the game is coded). Others will likely prefer WASD. It is what it is.
+* ESDF vs WASD. I prefer ESDF (so that's how the game is coded). Others will likely prefer WASD.
+* Fauna being referred to as 'Enemy' in combat logs. I'd prefer they be referred by species.
