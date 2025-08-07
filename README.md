@@ -45,7 +45,7 @@ The UI is simple and designed to give you all the vital information at a glance.
 
 2.  **Explore the Map:** Move your character (`@`) around the map to find a good spot to scan.
 
-3.  **Scan for Treasure:** Press the `spacebar` to activate the Seeker Droid(™).
+3.  **Scan for Treasure:** Press the `spacebar` to activate the Seeker Droid(™). A **large yellow ring** indicates a scan in progress.
 
 ![Scanning animation](img/scanning.png)
 
@@ -105,5 +105,5 @@ The expected directory structure will look like this after running the game for 
 Some things that are currently less than perfect and that may be fixed one day (or sooner if someone else cares to contribute):
 
 * The Player stats (Health and resource counts) do not really stand out against the map.
-* Redrawing the map is flicker and feels janky. It works but it doesn't look too good.
+* Redrawing the map is flickery and feels janky. It works but it doesn't look too good.
 * ESDF vs WASD. I prefer ESDF (so that's how the game is coded). Others will likely prefer WASD. It is what it is.
