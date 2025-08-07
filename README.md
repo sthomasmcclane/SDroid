@@ -39,6 +39,7 @@ The UI is simple and designed to give you all the vital information at a glance.
 ### The Gameplay Loop
 
 1.  **Select a Planet and Dig Site:** Choose where you want to explore from the list of available locations.
+
 ![Select a planet](img/planet-selection.png)
 ![Select a dig site](img/dig-site-selection.png)
 
