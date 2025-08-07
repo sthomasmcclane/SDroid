@@ -45,7 +45,9 @@ The UI is simple and designed to give you all the vital information at a glance.
 
 2.  **Explore the Map:** Move your character (`@`) around the map to find a good spot to scan.
 
-3.  **Scan for Treasure:** Press the `spacebar` to activate the Seeker Droid(™). A **large yellow ring** indicates a scan in progress.
+3.  **Scan for Treasure:** Press the `spacebar` to activate the Seeker Droid(™).
+
+*   A **large yellow ring** indicates a scan in progress.
 
 ![Scanning animation](img/scanning.png)
 
