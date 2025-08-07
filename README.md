@@ -46,8 +46,10 @@ The UI is simple and designed to give you all the vital information at a glance.
 
 3.  **Scan for Treasure:** Press the `spacebar` to activate the Seeker Droid(™).
 ![Scanning animation](img/scanning.png)
+
     *   A **large red ring** indicates that the nearest treasure is far away. Move to a new area and try again.
 ![Scan failure](img/scan-failed.png)
+
     *   A **small green ring with an 'X'** indicates that a treasure is nearby. The 'X' points in the precise direction of the treasure.
 ![Scan success](img/scan-success.png)
 
